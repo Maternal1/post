@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Body Value</title>
+    <style>
+        body {
+            font-size: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+            background-color: #F5DEC7;
+        }
+
+
+        #fhirForm {
+            text-align: left;
+            padding: 90px;
+            border-radius: 5px;
+            margin-top: 0px;
+            background-color: #EFCFAE;
+        }
+
+        #button {
+            text-align: right;
+            margin-top: 10px;
+        }
+        #fhirForm input[type="text"],
+            #fhirForm input[type="date"],
+            #fhirForm button {
+                font-size: 28px; /* 調整輸入框和按鈕字體大小 */
+            }
+    </style>
+    <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+</head>
+
+<body>
+
+    <form id="fhirForm">
+        <label for="weight">體重:</label>
+        <input type="text" id="weight"><br><br>
+        <table>
+            <tr>
+                <td>血壓：</td>
+                <td>
+                    <label for="DBP">收縮壓:</label>
+                    <input type="text" id="DBP">
+                </td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                    <label for="SBP">舒張壓:</label>
+                    <input type="text" id="SBP">
+                </td>
+            </tr>
+        </table>
+
+        <br>
+        <label for="Sugar">飯前血糖:</label>
+        <input type="text" id="Sugar"><br><br>
+
+        <label for="heartRate">心率:</label>
+        <input type="text" id="heartRate"><br><br>
+
+        <label for="bodyTemperature">體溫:</label>
+        <input type="text" id="bodyTemperature"><br><br>
+
+        <label for="date">日期:</label>
+        <input type="date" id="date" max="" onchange="checkDate(this.value)"><br><br>
+
+        <div id="button">
+            <button type="button" onclick="postObservation()">送出</button>
+            <button type="button" onclick="clearForm()">清除</button>
+        </div>
+    </form>
+
+    <script>
+        const patientId = "";
+        function receiveValueFromFlutter(value) {
+            // 在這裡處理從 Flutter 傳遞過來的值
+            alert("Received value from Flutter: " + value);
+            patientId = value;
+            document.getElementById("bodyTemperature").value=value;
+        }
+        
+
+
+
+        function convertToFhir(data) {
+            const fhirData = {
+                resourceType: "Observation",
+                status: "final",
+                category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "vital-signs", display: "Vital Signs" }] }],
+                subject: {
+                    reference: "Patient/" + patientId
+                },
+                effectiveDateTime: new Date().toISOString(),
+                component: []
+            };
+
+            fhirData.component.push({
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "29463-7",
+                        display: "Body weight"
+                    }]
+                },
+                valueQuantity: {
+                    value: parseFloat(data.weight),
+                    unit: "kg",
+                    system: "http://unitsofmeasure.org",
+                    code: "kg"
+                }
+            });
+
+            fhirData.component.push({
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "8480-6",
+                        display: "Systolic blood pressure"
+                    }]
+                },
+                valueQuantity: {
+                    value: parseInt(data.SBP),
+                    unit: "mmHg",
+                    system: "http://unitsofmeasure.org",
+                    code: "mm[Hg]"
+                }
+            });
+
+            fhirData.component.push({
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "8462-4",
+                        display: "Diastolic blood pressure"
+                    }]
+                },
+                valueQuantity: {
+                    value: parseInt(data.DBP),
+                    unit: "mmHg",
+                    system: "http://unitsofmeasure.org",
+                    code: "mm[Hg]"
+                }
+            });
+
+            fhirData.component.push({
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "15074-8",
+                        display: "Blood sugar"
+                    }]
+                },
+                valueQuantity: {
+                    value: parseFloat(data.Sugar),
+                    unit: "mg/dL",
+                    system: "http://unitsofmeasure.org",
+                    code: "mg/dL"
+                }
+            });
+
+
+            fhirData.component.push({
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "8867-4",
+                        display: "Heart rate"
+                    }]
+                },
+                valueQuantity: {
+                    value: parseInt(data.heartRate),
+                    unit: "beats/min",
+                    system: "http://unitsofmeasure.org",
+                    code: "/min"
+                }
+            });
+
+
+            fhirData.component.push({
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "8310-5",
+                        display: "Body temperature"
+                    }]
+                },
+                valueQuantity: {
+                    value: parseFloat(data.bodyTemperature),
+                    unit: "C",
+                    system: "http://unitsofmeasure.org",
+                    code: "Cel"
+                }
+            });
+            fhirData.component.push({
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "364516002",
+                        display: "Date"
+                    }]
+                },
+                valueQuantity: {
+                    value: parseFloat(data.date),
+                    unit: "d",
+                    system: "http://unitsofmeasure.org",
+                    code: "d"
+                }
+            });
+
+
+            return fhirData;
+        }
+
+        function postObservation() {
+            const selectedDate = document.getElementById("date").value;
+            const today = new Date().toISOString().split('T')[0]; // 獲取今天的日期，ISO 格式
+            if (selectedDate > today) {
+                alert("不能選擇今天以後的日期！");
+                return;
+            }
+            const DBP = parseInt(document.getElementById("DBP").value);
+            const SBP = parseInt(document.getElementById("SBP").value);
+            let warning = "";
+
+            if (DBP > 130 || SBP > 80) {
+                warning += "您今天的血壓有點高，建議每週運動3~5天，飲食也建議少油少鹽喔！\n";
+            }
+
+            const Sugar = parseFloat(document.getElementById("Sugar").value);
+            if (Sugar < 70) {
+                warning += "您今天的血糖有點低，建議您攝取適量的營養喔！\n";
+            } else if (Sugar > 99) {
+                warning += "您今天的血糖有點高，建議您少吃一些高升糖和高油脂的食物喔！\n";
+            }
+
+            const bodyTemperature = parseFloat(document.getElementById("bodyTemperature").value);
+            if (bodyTemperature >= 37.5 && bodyTemperature < 38) {
+                warning += "您今天體溫偏高，要多注意保暖喔！\n";
+            } else if (bodyTemperature >= 38) {
+                warning += "您已經發燒了，請盡速就醫！\n";
+            }
+
+            if (warning == "") {
+                warning += "今天狀況不錯，請繼續保持喔！\n";
+            }
+            alert(warning);
+
+
+            const data = {
+                weight: document.getElementById("weight").value,
+                DBP: document.getElementById("DBP").value,
+                SBP: document.getElementById("SBP").value,
+                Sugar: document.getElementById("Sugar").value,
+                heartRate: document.getElementById("heartRate").value,
+                bodyTemperature: document.getElementById("bodyTemperature").value,
+                date: document.getElementById("date").value,
+            };
+
+            const fhirData = convertToFhir(data);
+            //https://hapi.fhir.org/baseR4
+            fetch("https://fhir.tcumi.com:58443/r5/fhir/Observation", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(fhirData)
+            })
+                .then(response => response.json())
+                .then(responseData => {
+                    alert("成功送出");
+                })
+                .catch(error => {
+                    console.error("Error uploading FHIR data:", error);
+                    alert("Error uploading FHIR data:\n" + error);
+                });
+
+            clearForm();
+        }
+
+        function clearForm() {
+            document.getElementById("fhirForm").reset();
+        }
+
+        function goHome() {
+            window.location.href = "web.html";
+        }
+
+    </script>
+</body>
+
+</html>
